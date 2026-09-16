@@ -1,90 +1,64 @@
-# React + Vite + Hono + Cloudflare Workers
+# Lucky's Web Crypt
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/templates/tree/main/vite-react-template)
+Lucky Patel's personal internet home: a small dark web crypt with a cute horror mood, disco lights, random emoji creatures, a tiny console, and a Hono API.
 
-This template provides a minimal setup for building a React application with TypeScript and Vite, designed to run on Cloudflare Workers. It features hot module replacement, ESLint integration, and the flexibility of Workers deployments.
+## Stack
 
-![React + TypeScript + Vite + Cloudflare Workers](https://imagedelivery.net/wSMYJvS3Xw-n339CbDyDIA/fc7b4b62-442b-4769-641b-ad4422d74300/public)
+- React + TypeScript
+- Vite
+- Hono
+- Cloudflare Workers + Wrangler
 
-<!-- dash-content-start -->
-
-🚀 Supercharge your web development with this powerful stack:
-
-- [**React**](https://react.dev/) - A modern UI library for building interactive interfaces
-- [**Vite**](https://vite.dev/) - Lightning-fast build tooling and development server
-- [**Hono**](https://hono.dev/) - Ultralight, modern backend framework
-- [**Cloudflare Workers**](https://developers.cloudflare.com/workers/) - Edge computing platform for global deployment
-
-### ✨ Key Features
-
-- 🔥 Hot Module Replacement (HMR) for rapid development
-- 📦 TypeScript support out of the box
-- 🛠️ ESLint configuration included
-- ⚡ Zero-config deployment to Cloudflare's global network
-- 🎯 API routes with Hono's elegant routing
-- 🔄 Full-stack development setup
-- 🔎 Built-in Observability to monitor your Worker
-
-Get started in minutes with local development or deploy directly via the Cloudflare dashboard. Perfect for building modern, performant web applications at the edge.
-
-<!-- dash-content-end -->
-
-## Getting Started
-
-To start a new project with this template, run:
-
-```bash
-npm create cloudflare@latest -- --template=cloudflare/templates/vite-react-template
-```
-
-A live deployment of this template is available at:
-[https://react-vite-template.templates.workers.dev](https://react-vite-template.templates.workers.dev)
-
-## Development
-
-Install dependencies:
+## Run locally
 
 ```bash
 npm install
-```
-
-Start the development server with:
-
-```bash
 npm run dev
 ```
 
-Your application will be available at [http://localhost:5173](http://localhost:5173).
+The site runs at `http://localhost:5173`. The local Hono API runs at `http://localhost:8787`.
 
-## Production
+Useful endpoints:
 
-Build your project for production:
+- `GET /api/profile`
+- `GET /api/notes`
+
+## Build and deploy
 
 ```bash
 npm run build
-```
-
-Preview your build locally:
-
-```bash
 npm run preview
+npm run deploy
 ```
 
-Deploy your project to Cloudflare Workers:
+`npm run deploy` builds the Vite app and deploys the Worker with Wrangler. Cloudflare can also run this command from the repository's continuous deployment settings.
 
-```bash
-npm run build && npm run deploy
+## Project map
+
+```text
+src/
+  App.tsx            # page composition and interactive behavior
+  main.tsx           # React entrypoint
+  styles.css         # complete visual system and responsive layout
+  worker/index.ts    # Cloudflare Worker Hono routes and asset fallback
+server/index.ts      # local Hono API used by npm run dev
+DESIGN.md            # design contract for future contributors and AI agents
+wrangler.json        # Cloudflare Worker and static asset configuration
 ```
 
-Monitor your workers:
+## Design guardrails
 
-```bash
-npx wrangler tail
-```
+Read [`DESIGN.md`](./DESIGN.md) before changing the homepage. The intended direction is personal, compact, dark, cute, slightly haunted, and technically playful — not corporate, generic, or recruiter-template-like.
 
-## Additional Resources
+Keep the following intact unless Lucky explicitly asks for a change:
 
-- [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
-- [Vite Documentation](https://vitejs.dev/guide/)
-- [React Documentation](https://reactjs.org/)
-- [Hono Documentation](https://hono.dev/)
+- Lucky Patel identity and informal voice
+- the dark web-crypt canvas
+- disco and spooky/soft controls
+- small UI cards and laptop-friendly proportions
+- random decorative emoji creatures
+- blog, console, and API navigation
+
+## Deployment notes
+
+The Cloudflare Worker backend in `src/worker/` is separate from the local development API in `server/`. Keep both files in sync when changing API response shapes. Do not commit secrets, SSH keys, API tokens, or `.env` files.
