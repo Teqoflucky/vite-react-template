@@ -13,6 +13,8 @@ app.get('/api/profile', (c) =>
 
 app.get('/api/notes', (c) =>
   c.json([
+    { title: 'Nuvio installation: Windows + Android', date: '09.18.26', tag: 'GUIDE', slug: 'nuvio' },
+    { title: 'Torrentio installation: Windows + Android', date: '09.18.26', tag: 'GUIDE', slug: 'torrentio' },
     { title: 'Interfaces should have secret doors', date: '08.14.25', tag: 'ESSAY' },
     { title: 'A field guide to softer systems', date: '06.02.25', tag: 'NOTES' },
     { title: 'Things I learned from a very small bug', date: '03.19.25', tag: 'PROCESS' },
