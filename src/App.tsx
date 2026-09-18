@@ -171,16 +171,24 @@ function GuideReader({ guide, onClose }: { guide: Guide; onClose: () => void }) 
   return (
     <article className="guide-reader">
       <div className="guide-heading">
-        <div><span className="section-label">{guide.eyebrow}</span><h2>{guide.title}</h2><p>{guide.summary}</p><div className="guide-meta"><span><Smartphone size={12} /> ANDROID</span><span><Terminal size={12} /> WINDOWS PC</span><span><ListChecks size={12} /> 7 STEPS</span></div></div>
+        <div><span className="section-label">A PRACTICAL WALKTHROUGH</span><h2>{guide.title}</h2><p className="guide-dek">{guide.summary}</p><div className="guide-byline"><span>By Lucky Patel</span><span>·</span><span>{guide.eyebrow.replace('STREAMING SETUP · ', '')}</span></div></div>
         <button className="guide-close" onClick={onClose} aria-label="Close guide"><X size={16} /></button>
       </div>
-      <div className="guide-notice"><ShieldCheck size={18} /><span><b>Stay safe + legal.</b> Third-party add-ons may list sources that are not authorized everywhere. Use official apps, protect your account, and only access content you are licensed or otherwise permitted to watch.</span></div>
+      <div className="guide-summary">
+        <div><b>You'll need</b><span>Stremio · a Windows PC or Android device · an internet connection</span></div>
+        <div><b>In this guide</b><span>Install the app, add the service, sync your account, and test the setup</span></div>
+      </div>
       <div className="guide-layout">
-        <div className="guide-steps"><div className="guide-subhead"><ListChecks size={15} /> step by step</div>{guide.steps.map((step) => <section className="guide-step" key={step.title}><h3>{step.title}</h3><p>{step.body}</p></section>)}</div>
+        <div className="guide-main">
+          <p className="guide-lead">This guide walks through the complete setup from a clean Stremio install to your first successful playback. Follow the steps in order, and use the same account on every device so your add-ons and preferences stay in sync.</p>
+          <div className="guide-subhead"><ListChecks size={15} /> installation steps</div>
+          <div className="guide-steps">{guide.steps.map((step, index) => <section className="guide-step" key={step.title}><span className="guide-step-number">{String(index + 1).padStart(2, '0')}</span><div><h3>{step.title.replace(/^\d+\.\s*/, '')}</h3><p>{step.body}</p></div></section>)}</div>
+          <div className="guide-note"><ShieldCheck size={15} /><span>Use official downloads and only access content you are authorized to watch. That is all you need to keep in mind while following the steps.</span></div>
+        </div>
         <aside className="guide-aside">
           <div className="guide-card"><div className="guide-subhead"><ExternalLink size={15} /> official links</div><div className="guide-links">{guide.links.map((link) => <a className="guide-resource" key={link.href} href={link.href} target="_blank" rel="noreferrer"><span><b>{link.label}</b><small>{link.detail}</small></span><ExternalLink size={13} /></a>)}</div></div>
-          <div className="guide-card"><div className="guide-subhead"><Check size={15} /> before you finish</div><ul>{guide.checklist.map((item) => <li key={item}>{item}</li>)}</ul></div>
-          <div className="guide-card"><div className="guide-subhead"><Smartphone size={15} /> quick fixes</div>{guide.troubleshooting.map((item) => <details key={item.title}><summary>{item.title}</summary><p>{item.body}</p></details>)}</div>
+          <div className="guide-card"><div className="guide-subhead"><Check size={15} /> final checklist</div><ul>{guide.checklist.map((item) => <li key={item}>{item}</li>)}</ul></div>
+          <div className="guide-card"><div className="guide-subhead"><Smartphone size={15} /> if something goes wrong</div>{guide.troubleshooting.map((item) => <details key={item.title}><summary>{item.title}</summary><p>{item.body}</p></details>)}</div>
           <a className="guide-link" href="https://www.stremio.com/" target="_blank" rel="noreferrer"><ExternalLink size={13} /> official Stremio site</a>
         </aside>
       </div>
