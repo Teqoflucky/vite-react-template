@@ -57,8 +57,11 @@
 
 .guide-reader{margin-top:28px;background:#171221;border:1px solid var(--line);border-radius:12px;padding:28px;box-shadow:0 16px 45px #050309}
 .guide-heading{display:flex;justify-content:space-between;gap:25px;border-bottom:1px solid var(--line);padding-bottom:22px}
-.guide-heading h2{font-size:clamp(30px,4vw,50px);line-height:.95;letter-spacing:-.07em;margin:12px 0 10px}
+.guide-heading h2{font-size:clamp(30px,4vw,50px);line-height:.95;letter-spacing:-.07em;margin:12px 0 10px;color:#fff}
 .guide-heading p{color:var(--muted);font-size:13px;line-height:1.55;max-width:650px;margin:0}
+.guide-meta{display:flex;gap:7px;flex-wrap:wrap;margin-top:18px}
+.guide-meta span{display:inline-flex;align-items:center;gap:5px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:6px 8px;font:9px var(--mono);letter-spacing:.05em}
+.guide-meta svg{color:var(--pink)}
 .guide-close{background:#251a31;border:1px solid var(--line);color:var(--muted);border-radius:50%;width:34px;height:34px;display:grid;place-items:center;flex:none}
 .guide-close:hover{color:var(--text);border-color:var(--pink)}
 .guide-notice{display:flex;gap:10px;align-items:flex-start;color:#dfd4bd;background:#2b241c;border:1px solid #5d4932;border-radius:7px;padding:13px 15px;margin:22px 0;font-size:11px;line-height:1.55}
@@ -78,6 +81,14 @@
 .guide-card details:first-of-type{border-top:0;padding-top:0}
 .guide-card summary{cursor:pointer;color:var(--text);font-size:11px;line-height:1.4}
 .guide-card details p{color:var(--muted);font-size:10px;line-height:1.5;margin:7px 0 0}
+.guide-links{display:grid;gap:8px}
+.guide-resource{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #3d2c4e;border-radius:6px;padding:10px;color:var(--text);transition:.2s}
+.guide-resource:hover{border-color:var(--pink);background:#291d37;transform:translateX(2px)}
+.guide-resource span{min-width:0}
+.guide-resource b,.guide-resource small{display:block}
+.guide-resource b{font-size:11px;font-weight:500}
+.guide-resource small{color:var(--muted);font-size:9px;line-height:1.35;margin-top:4px}
+.guide-resource>svg{color:var(--lime);flex:none}
 .guide-link{display:inline-flex;align-items:center;gap:7px;color:var(--lime);font:10px var(--mono);text-transform:uppercase}
 .guide-link:hover{text-decoration:underline}
 @media(max-width:700px){.guide-reader{padding:20px 16px}.guide-heading{gap:10px}.guide-layout{display:block}.guide-aside{margin-top:12px}.guide-notice{font-size:10px}.guide-step p{font-size:11px}}

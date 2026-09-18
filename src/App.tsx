@@ -10,6 +10,7 @@ type Guide = {
   steps: { title: string; body: string }[];
   checklist: string[];
   troubleshooting: { title: string; body: string }[];
+  links: { label: string; detail: string; href: string }[];
 };
 
 const guides: Record<string, Guide> = {
@@ -33,6 +34,11 @@ const guides: Record<string, Guide> = {
       { title: 'Nuvio is installed but has no streams', body: 'Refresh the title, check your connection, and test another permitted title. Provider availability can change; do not “fix” this by installing unknown helper apps or APKs.' },
       { title: 'The two devices disagree', body: 'Confirm both devices are online and signed into the same account. Remove duplicate Nuvio entries, restart Stremio, and reinstall from the current official listing if the account still does not sync.' },
     ],
+    links: [
+      { label: 'Nuvio official site', detail: 'Project home and current product information', href: 'https://nuvio.tv' },
+      { label: 'Stremio downloads', detail: 'Windows, Android, and other official apps', href: 'https://www.stremio.com/downloads' },
+      { label: 'Stremio add-ons', detail: 'Official add-on documentation and directory', href: 'https://www.stremio.com/add-ons' },
+    ],
   },
   torrentio: {
     slug: 'torrentio',
@@ -53,6 +59,11 @@ const guides: Record<string, Guide> = {
       { title: 'The configuration page is unavailable', body: 'Do not use a mirror just because it appears in a search result. Wait for the official project page to return or check its documented status channel. Community add-ons can be unavailable without anything being wrong with your Stremio install.' },
       { title: 'Sources are slow or fail', body: 'Try a different rights-cleared title, check your network, and review the quality/provider filters. Torrent availability is variable. Avoid installing “codec packs,” browser extensions, or unknown players advertised as a fix.' },
       { title: 'Android does not show the add-on', body: 'Force-refresh Stremio, verify the same account is active, and check My add-ons. If you used a browser, allow the stremio:// handoff; otherwise repeat the install from the official configuration page.' },
+    ],
+    links: [
+      { label: 'Torrentio configure', detail: 'Current configuration page and provider settings', href: 'https://torrentio.strem.fun/configure' },
+      { label: 'Torrentio project home', detail: 'Service information and configuration entry point', href: 'https://torrentio.strem.fun' },
+      { label: 'Stremio downloads', detail: 'Windows, Android, and other official apps', href: 'https://www.stremio.com/downloads' },
     ],
   },
 };
@@ -160,13 +171,14 @@ function GuideReader({ guide, onClose }: { guide: Guide; onClose: () => void }) 
   return (
     <article className="guide-reader">
       <div className="guide-heading">
-        <div><span className="section-label">{guide.eyebrow}</span><h2>{guide.title}</h2><p>{guide.summary}</p></div>
+        <div><span className="section-label">{guide.eyebrow}</span><h2>{guide.title}</h2><p>{guide.summary}</p><div className="guide-meta"><span><Smartphone size={12} /> ANDROID</span><span><Terminal size={12} /> WINDOWS PC</span><span><ListChecks size={12} /> 7 STEPS</span></div></div>
         <button className="guide-close" onClick={onClose} aria-label="Close guide"><X size={16} /></button>
       </div>
       <div className="guide-notice"><ShieldCheck size={18} /><span><b>Stay safe + legal.</b> Third-party add-ons may list sources that are not authorized everywhere. Use official apps, protect your account, and only access content you are licensed or otherwise permitted to watch.</span></div>
       <div className="guide-layout">
         <div className="guide-steps"><div className="guide-subhead"><ListChecks size={15} /> step by step</div>{guide.steps.map((step) => <section className="guide-step" key={step.title}><h3>{step.title}</h3><p>{step.body}</p></section>)}</div>
         <aside className="guide-aside">
+          <div className="guide-card"><div className="guide-subhead"><ExternalLink size={15} /> official links</div><div className="guide-links">{guide.links.map((link) => <a className="guide-resource" key={link.href} href={link.href} target="_blank" rel="noreferrer"><span><b>{link.label}</b><small>{link.detail}</small></span><ExternalLink size={13} /></a>)}</div></div>
           <div className="guide-card"><div className="guide-subhead"><Check size={15} /> before you finish</div><ul>{guide.checklist.map((item) => <li key={item}>{item}</li>)}</ul></div>
           <div className="guide-card"><div className="guide-subhead"><Smartphone size={15} /> quick fixes</div>{guide.troubleshooting.map((item) => <details key={item.title}><summary>{item.title}</summary><p>{item.body}</p></details>)}</div>
           <a className="guide-link" href="https://www.stremio.com/" target="_blank" rel="noreferrer"><ExternalLink size={13} /> official Stremio site</a>
