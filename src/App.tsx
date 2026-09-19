@@ -1,4 +1,5 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import Hls from 'hls.js';
 import { ArrowLeft, BookOpen, Check, Code2, ExternalLink, Ghost, Heart, ListChecks, Moon, Music2, Play, Radio, Search, ShieldCheck, Smartphone, Sparkles, Terminal, WandSparkles, X } from 'lucide-react';
 
 type Note = { title: string; date: string; tag: string; slug?: string };
@@ -84,9 +85,7 @@ const streamTitles: StreamTitle[] = [
   { id: 'big-buck-bunny', title: 'Big Buck Bunny', year: 2008, type: 'Movie', genre: 'Animation', description: 'An open movie from the Blender Foundation and a useful test title for the player.', poster: '🐰', sources: [{ label: 'Open movie source', quality: '1080p · MP4', url: 'https://storage.googleapis.com/coverr-main/mp4/Mt_Baker.mp4' }] },
   { id: 'tears-of-steel', title: 'Tears of Steel', year: 2012, type: 'Movie', genre: 'Sci-fi', description: 'A public Blender Foundation production for testing title details and playback controls.', poster: '🤖', sources: [{ label: 'Open movie source', quality: '720p · MP4', url: 'https://storage.googleapis.com/coverr-main/mp4/Footboys.mp4' }] },
 ];
-const NUVIO_URL = 'https://api.nuvio.tv';
-const NUVIO_KEY = 'sb_publishable_1Clq8rlTVACkdcZuqr6_AD__xUUC_EN';
-const DEMO_SOURCE = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://api.luckypatel.tech';
 
 const emoji = ['🐈‍⬛', '🕷️', '🦇', '🪲', '🐞', '🦋', '🐛', '🦂', '🪳', '🦟', '🪰', '🐌', '🪱', '🦗', '🐸', '👻'];
 const nav = [
@@ -197,9 +196,9 @@ function StreamPage() {
   const [showConnect, setShowConnect] = useState(false);
   const visibleTitles = titles.filter((item) => (filter === 'All' || item.type === filter) && `${item.title} ${item.genre}`.toLowerCase().includes(query.toLowerCase()));
 
-  const nuvioRequest = async (path: string, init?: RequestInit) => {
-    const response = await fetch(`${NUVIO_URL}${path}`, { ...init, headers: { apikey: NUVIO_KEY, ...(nuvioToken ? { Authorization: `Bearer ${nuvioToken}` } : {}), ...init?.headers } });
-    if (!response.ok) throw new Error(`Nuvio request failed (${response.status})`);
+  const apiRequest = async (path: string, init?: RequestInit) => {
+    const response = await fetch(`${API_BASE}${path}`, { ...init, headers: { ...(nuvioToken ? { Authorization: `Bearer ${nuvioToken}` } : {}), ...init?.headers } });
+    if (!response.ok) throw new Error(`API request failed (${response.status})`);
     return response;
   };
 
@@ -207,7 +206,7 @@ function StreamPage() {
     event.preventDefault();
     setNuvioStatus('connecting...');
     try {
-      const response = await fetch(`${NUVIO_URL}/auth/v1/token?grant_type=password`, { method: 'POST', headers: { apikey: NUVIO_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+      const response = await fetch(`${API_BASE}/nuvio/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
       if (!response.ok) throw new Error(response.status === 400 ? 'Check your email and password.' : `Sign-in failed (${response.status})`);
       const session = await response.json() as { access_token: string; user?: { email?: string } };
       localStorage.setItem('nuvio_access_token', session.access_token);
@@ -215,10 +214,10 @@ function StreamPage() {
       setNuvioName(session.user?.email || email);
       setPassword('');
       setNuvioStatus('loading your add-ons...');
-      const [addons, plugins] = await Promise.all([
-        fetch(`${NUVIO_URL}/rest/v1/addons?select=url,name,enabled,sort_order&profile_id=eq.1&enabled=eq.true&order=sort_order`, { headers: { apikey: NUVIO_KEY, Authorization: `Bearer ${session.access_token}` } }).then((item) => item.json() as Promise<NuvioResource[]>),
-        fetch(`${NUVIO_URL}/rest/v1/plugins?select=url,name,enabled,sort_order&profile_id=eq.1&enabled=eq.true&order=sort_order`, { headers: { apikey: NUVIO_KEY, Authorization: `Bearer ${session.access_token}` } }).then((item) => item.json() as Promise<NuvioResource[]>),
-      ]);
+      const resourcesResponse = await apiRequest('/nuvio/resources', { headers: { Authorization: `Bearer ${session.access_token}` } });
+      const resources = await resourcesResponse.json() as { addons: NuvioResource[]; plugins: NuvioResource[] };
+      const addons = resources.addons;
+      const plugins = resources.plugins;
       const discovered = await discoverCatalog(addons.concat(plugins));
       if (discovered.length > 0) setTitles(discovered);
       setNuvioStatus(`${addons.length + plugins.length} resources loaded${discovered.length ? ` · ${discovered.length} titles` : ''}`);
@@ -261,9 +260,34 @@ function StreamPage() {
         {visibleTitles.length === 0 && <div className="stream-empty">No titles match “{query}”.</div>}
         <div className="stream-footnote"><ShieldCheck size={14} /> Prototype sources are rights-cleared demos. Real Nuvio/plugin sources should be returned by the Oracle adapter before production playback is enabled.</div>
       </section>
-      {selected && <div className="stream-modal-backdrop" role="presentation" onClick={() => setSelected(null)}><section className="stream-detail" role="dialog" aria-modal="true" aria-label={selected.title} onClick={(event) => event.stopPropagation()}><button className="guide-close" onClick={() => setSelected(null)} aria-label="Close title"><X size={16} /></button><div className="stream-detail-poster">{selected.poster}</div><span className="section-label">{selected.type} · {selected.year}</span><h2>{selected.title}</h2><p>{selected.description}</p><div className="stream-sources"><span className="guide-subhead"><Play size={14} /> available sources</span>{selected.sources.map((item) => <button className="stream-source" key={item.url} onClick={async () => { if (item.url.endsWith('.json')) { try { const response = await fetch(item.url); const data = await response.json() as { streams?: { title?: string; name?: string; url: string }[] }; const remote = data.streams?.find((item) => item.url); if (remote) setSource({ label: remote.title || remote.name || 'Nuvio stream', quality: 'Remote source', url: remote.url }); else setNuvioStatus('This source returned no playable streams.'); } catch { setNuvioStatus('Unable to load streams from this add-on.'); } } else setSource(item); }}><span><b>{item.label}</b><small>{item.quality}</small></span><Play size={14} /></button>)}</div>{source && <div className="stream-player"><video controls autoPlay src={source.url}>Your browser does not support video playback.</video><div><b>{selected.title}</b><span>{source.quality}</span></div></div>}</section></div>}
+      {selected && <div className="stream-modal-backdrop" role="presentation" onClick={() => setSelected(null)}><section className="stream-detail" role="dialog" aria-modal="true" aria-label={selected.title} onClick={(event) => event.stopPropagation()}><button className="guide-close" onClick={() => setSelected(null)} aria-label="Close title"><X size={16} /></button><div className="stream-detail-poster">{selected.poster}</div><span className="section-label">{selected.type} · {selected.year}</span><h2>{selected.title}</h2><p>{selected.description}</p><div className="stream-sources"><span className="guide-subhead"><Play size={14} /> available sources</span>{selected.sources.map((item) => <button className="stream-source" key={item.url} onClick={async () => { if (item.url.endsWith('.json')) { try { const response = await fetch(item.url); const data = await response.json() as { streams?: { title?: string; name?: string; url: string }[] }; const remote = data.streams?.find((item) => item.url); if (remote) setSource({ label: remote.title || remote.name || 'Nuvio stream', quality: 'Remote source', url: remote.url }); else setNuvioStatus('This source returned no playable streams.'); } catch { setNuvioStatus('Unable to load streams from this add-on.'); } } else setSource(item); }}><span><b>{item.label}</b><small>{item.quality}</small></span><Play size={14} /></button>)}</div>{source && <WebPlayer source={source} title={selected.title} />}</section></div>}
     </main>
   );
+}
+
+function WebPlayer({ source, title }: { source: { url: string; quality: string }; title: string }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    setError('');
+    if (source.url.includes('.m3u8') && Hls.isSupported()) {
+      const hls = new Hls({ enableWorker: true, capLevelToPlayerSize: true, startLevel: -1 });
+      hls.loadSource(source.url);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        if (data.fatal) setError('This HLS source could not be played in the browser.');
+      });
+      return () => hls.destroy();
+    }
+    video.src = source.url;
+    video.load();
+    return () => { video.removeAttribute('src'); video.load(); };
+  }, [source.url]);
+
+  return <div className="stream-player"><video ref={videoRef} controls autoPlay playsInline onError={() => setError('This source could not be played in the browser.')}>Your browser does not support video playback.</video><div><b>{title}</b><span>{source.quality} · native 4K supported when available</span></div>{error && <small className="player-error">{error}</small>}</div>;
 }
 
 function GuideReader({ guide, onClose }: { guide: Guide; onClose: () => void }) {
