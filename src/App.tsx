@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from 'react';
-import { BookOpen, Check, Code2, ExternalLink, Ghost, Heart, ListChecks, Moon, Music2, Radio, ShieldCheck, Smartphone, Sparkles, Terminal, WandSparkles, X } from 'lucide-react';
+import { ArrowLeft, BookOpen, Check, Code2, ExternalLink, Ghost, Heart, ListChecks, Moon, Music2, Play, Radio, Search, ShieldCheck, Smartphone, Sparkles, Terminal, WandSparkles, X } from 'lucide-react';
 
 type Note = { title: string; date: string; tag: string; slug?: string };
 type Guide = {
@@ -12,6 +12,7 @@ type Guide = {
   troubleshooting: { title: string; body: string }[];
   links: { label: string; detail: string; href: string }[];
 };
+type StreamTitle = { id: string; title: string; year: number; type: 'Movie' | 'Series'; genre: string; description: string; poster: string; sources: { label: string; quality: string; url: string }[] };
 
 const guides: Record<string, Guide> = {
   nuvio: {
@@ -76,6 +77,12 @@ const defaultNotes: Note[] = [
   { title: 'Things I learned from a very small bug', date: '03.19.25', tag: 'PROCESS' },
 ];
 
+const streamTitles: StreamTitle[] = [
+  { id: 'flower', title: 'Flower', year: 2019, type: 'Movie', genre: 'Documentary', description: 'A short, calm nature film used here as a rights-cleared player demo.', poster: '🌸', sources: [{ label: 'Demo stream', quality: '1080p · MP4', url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' }] },
+  { id: 'big-buck-bunny', title: 'Big Buck Bunny', year: 2008, type: 'Movie', genre: 'Animation', description: 'An open movie from the Blender Foundation and a useful test title for the player.', poster: '🐰', sources: [{ label: 'Open movie source', quality: '1080p · MP4', url: 'https://storage.googleapis.com/coverr-main/mp4/Mt_Baker.mp4' }] },
+  { id: 'tears-of-steel', title: 'Tears of Steel', year: 2012, type: 'Movie', genre: 'Sci-fi', description: 'A public Blender Foundation production for testing title details and playback controls.', poster: '🤖', sources: [{ label: 'Open movie source', quality: '720p · MP4', url: 'https://storage.googleapis.com/coverr-main/mp4/Footboys.mp4' }] },
+];
+
 const emoji = ['🐈‍⬛', '🕷️', '🦇', '🪲', '🐞', '🦋', '🐛', '🦂', '🪳', '🦟', '🪰', '🐌', '🪱', '🦗', '🐸', '👻'];
 const nav = [
   { id: 'notes', label: 'blog', icon: <BookOpen size={14} /> },
@@ -113,6 +120,10 @@ function App() {
   }, []);
 
   const go = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+
+  if (window.location.pathname === '/stream' || window.location.pathname.startsWith('/stream/')) {
+    return <StreamPage />;
+  }
 
   return (
     <main className={`${disco ? 'is-disco' : ''} ${horror ? 'is-horror' : 'is-sweet'}`}>
@@ -163,6 +174,28 @@ function App() {
       <section className="api-section" id="api"><div><span className="section-label">[ api ]</span><h2>A tiny<br /><em>portal</em></h2><p>Hono lives here.</p><a href="/api/profile" target="_blank" rel="noreferrer"><Radio size={14} /> GET /api/profile ↗</a></div><div className="api-badge"><WandSparkles size={23} /><b>200</b><span>lucky is online</span></div></section>
 
       <footer><span>© 2026 Lucky Patel</span><span><Heart size={12} /> built with React + Hono</span><button onClick={() => go('home')}>back to crypt ↑</button></footer>
+    </main>
+  );
+}
+
+function StreamPage() {
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<'All' | 'Movie' | 'Series'>('All');
+  const [selected, setSelected] = useState<StreamTitle | null>(null);
+  const [source, setSource] = useState<StreamTitle['sources'][number] | null>(null);
+  const visibleTitles = streamTitles.filter((item) => (filter === 'All' || item.type === filter) && `${item.title} ${item.genre}`.toLowerCase().includes(query.toLowerCase()));
+
+  return (
+    <main className="stream-page">
+      <header className="stream-header"><a className="brand" href="/"><span>✦</span> lucky's<br /><b>web crypt</b></a><span className="stream-label">[ stream lab ]</span><a className="stream-back" href="/"><ArrowLeft size={14} /> home</a></header>
+      <section className="stream-shell">
+        <div className="stream-intro"><div><span className="section-label">A SMALL CATALOG PROTOTYPE</span><h1>watch<br /><em>something.</em></h1><p>One calm place for your library, sources, and playback. This prototype uses sample titles while the Nuvio adapter is being connected.</p></div><div className="stream-status"><i /> adapter ready<br /><small>mock catalog · v0.1</small></div></div>
+        <div className="stream-toolbar"><label className="stream-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="search the catalog" aria-label="Search catalog" /></label><div className="stream-filters">{(['All', 'Movie', 'Series'] as const).map((item) => <button className={filter === item ? 'active' : ''} onClick={() => setFilter(item)} key={item}>{item}</button>)}</div></div>
+        <div className="stream-grid">{visibleTitles.map((item) => <button className="stream-card" key={item.id} onClick={() => setSelected(item)}><div className="stream-poster"><span>{item.poster}</span><small>{item.type}</small></div><div className="stream-card-copy"><b>{item.title}</b><span>{item.year} · {item.genre}</span></div></button>)}</div>
+        {visibleTitles.length === 0 && <div className="stream-empty">No titles match “{query}”.</div>}
+        <div className="stream-footnote"><ShieldCheck size={14} /> Prototype sources are rights-cleared demos. Real Nuvio/plugin sources should be returned by the Oracle adapter before production playback is enabled.</div>
+      </section>
+      {selected && <div className="stream-modal-backdrop" role="presentation" onClick={() => setSelected(null)}><section className="stream-detail" role="dialog" aria-modal="true" aria-label={selected.title} onClick={(event) => event.stopPropagation()}><button className="guide-close" onClick={() => setSelected(null)} aria-label="Close title"><X size={16} /></button><div className="stream-detail-poster">{selected.poster}</div><span className="section-label">{selected.type} · {selected.year}</span><h2>{selected.title}</h2><p>{selected.description}</p><div className="stream-sources"><span className="guide-subhead"><Play size={14} /> available sources</span>{selected.sources.map((item) => <button className="stream-source" key={item.url} onClick={() => setSource(item)}><span><b>{item.label}</b><small>{item.quality}</small></span><Play size={14} /></button>)}</div>{source && <div className="stream-player"><video controls autoPlay src={source.url}>Your browser does not support video playback.</video><div><b>{selected.title}</b><span>{source.quality}</span></div></div>}</section></div>}
     </main>
   );
 }
