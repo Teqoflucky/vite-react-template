@@ -1,31 +1,32 @@
 {
-    "name":  "atelier-portfolio",
-    "private":  true,
-    "version":  "0.1.0",
-    "type":  "module",
-    "scripts":  {
-                    "dev":  "concurrently \"vite\" \"tsx server/index.ts\"",
-                    "build":  "tsc -b \u0026\u0026 vite build",
-                    "preview":  "vite preview",
-                    "deploy":  "npm run build \u0026\u0026 wrangler deploy"
-                },
-    "dependencies":  {
-                         "@hono/node-server":  "^1.14.1",
-                         "@vitejs/plugin-react":  "^4.4.1",
-                         "concurrently":  "^9.1.2",
-                         "hono":  "^4.7.7",
-                         "lucide-react":  "^0.511.0",
-                         "react":  "^19.1.0",
-                         "react-dom":  "^19.1.0",
-                         "tsx":  "^4.19.4",
-                         "@cloudflare/workers-types":  "^5.20260915.1"
-                     },
-    "devDependencies":  {
-                            "@types/node":  "^22.15.21",
-                            "@types/react":  "^19.1.2",
-                            "@types/react-dom":  "^19.1.2",
-                            "typescript":  "^5.8.3",
-                            "vite":  "^6.3.5",
-                            "wrangler":  "^4.34.0"
-                        }
+    "name": "atelier-portfolio",
+    "private": true,
+    "version": "0.1.0",
+    "type": "module",
+    "scripts": {
+        "dev": "concurrently \"vite\" \"tsx server/index.ts\"",
+        "build": "tsc -b && vite build",
+        "preview": "vite preview",
+        "deploy": "npm run build && wrangler deploy"
+    },
+    "dependencies": {
+        "@cloudflare/workers-types": "^5.20260915.1",
+        "@hono/node-server": "^1.14.1",
+        "@vitejs/plugin-react": "^4.4.1",
+        "concurrently": "^9.1.2",
+        "hls.js": "^1.7.3",
+        "hono": "^4.7.7",
+        "lucide-react": "^0.511.0",
+        "react": "^19.1.0",
+        "react-dom": "^19.1.0",
+        "tsx": "^4.19.4"
+    },
+    "devDependencies": {
+        "@types/node": "^22.15.21",
+        "@types/react": "^19.1.2",
+        "@types/react-dom": "^19.1.2",
+        "typescript": "^5.8.3",
+        "vite": "^6.3.5",
+        "wrangler": "^4.34.0"
+    }
 }

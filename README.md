@@ -18,6 +18,14 @@ npm run dev
 
 The site runs at `http://localhost:5173`. The local Hono API runs at `http://localhost:8787`.
 
+The stream prototype uses `VITE_API_BASE_URL` for the Oracle API. Copy `.env.example` to `.env.local` for local development, or set the same variable in Cloudflare Pages:
+
+```bash
+VITE_API_BASE_URL=https://api.luckypatel.tech
+```
+
+Open `/stream` to test the catalog, Nuvio account connection, add-on discovery, and browser playback.
+
 Useful endpoints:
 
 - `GET /api/profile`
