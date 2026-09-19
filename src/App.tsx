@@ -15,6 +15,7 @@ type Guide = {
 };
 type StreamTitle = { id: string; title: string; year: number; type: 'Movie' | 'Series'; genre: string; description: string; poster: string; sources: { label: string; quality: string; url: string }[] };
 type NuvioCatalogItem = { id: string; type?: string; name?: string; year?: string | number; poster?: string; description?: string; genres?: string[] };
+type NuvioResource = { id?: string; name?: string; title?: string; url?: string; manifestUrl?: string; enabled?: boolean; active?: boolean; type?: string };
 
 const guides: Record<string, Guide> = {
   nuvio: {
@@ -192,6 +193,8 @@ function StreamPage() {
   const [nuvioToken, setNuvioToken] = useState(() => localStorage.getItem('nuvio_access_token') || '');
   const [nuvioName, setNuvioName] = useState('');
   const [nuvioStatus, setNuvioStatus] = useState('');
+  const [resources, setResources] = useState<NuvioResource[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
   const [showConnect, setShowConnect] = useState(false);
   const visibleTitles = titles.filter((item) => (filter === 'All' || item.type === filter) && `${item.title} ${item.genre}`.toLowerCase().includes(query.toLowerCase()));
 
@@ -219,6 +222,28 @@ function StreamPage() {
     setNuvioStatus(`${data.count} titles loaded`);
   };
 
+  const loadResources = async (token: string) => {
+    const response = await fetch(`${API_BASE}/nuvio/resources`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!response.ok) throw new Error(`Resources request failed (${response.status})`);
+    const data = await response.json() as { addons?: NuvioResource[]; addOns?: NuvioResource[]; plugins?: NuvioResource[]; resources?: NuvioResource[] };
+    const configured = [...(data.addons || data.addOns || []), ...(data.plugins || []), ...(data.resources || [])];
+    setResources(configured.filter((item) => item.enabled !== false && item.active !== false));
+  };
+
+  const refreshNuvio = async (token = nuvioToken) => {
+    if (!token) return;
+    setRefreshing(true);
+    setNuvioStatus('syncing Nuvio add-ons...');
+    try {
+      await loadResources(token);
+      await loadCatalog(token);
+    } catch (error) {
+      setNuvioStatus(error instanceof Error ? error.message : 'Unable to sync Nuvio.');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const connectNuvio = async (event: React.FormEvent) => {
     event.preventDefault();
     setNuvioStatus('connecting...');
@@ -231,7 +256,7 @@ function StreamPage() {
       setNuvioName(session.user?.email || email);
       setPassword('');
       setNuvioStatus('loading your catalog...');
-      await loadCatalog(session.access_token);
+      await refreshNuvio(session.access_token);
     } catch (error) {
       setNuvioStatus(error instanceof Error ? error.message : 'Unable to connect to Nuvio.');
     }
@@ -239,8 +264,15 @@ function StreamPage() {
 
   useEffect(() => {
     if (!nuvioToken) return;
-    loadCatalog(nuvioToken).catch((error) => setNuvioStatus(error instanceof Error ? error.message : 'Unable to load your catalog.'));
+    refreshNuvio(nuvioToken);
   }, []);
+
+  useEffect(() => {
+    if (!nuvioToken) return;
+    const onVisible = () => { if (document.visibilityState === 'visible') refreshNuvio(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [nuvioToken]);
 
   return (
     <main className="stream-page">
@@ -248,14 +280,15 @@ function StreamPage() {
       <section className="stream-shell">
         <div className="stream-intro"><div><span className="section-label">A SMALL CATALOG PROTOTYPE</span><h1>watch<br /><em>something.</em></h1><p>One calm place for your library, sources, and playback. Connect Nuvio to load your enabled add-ons and plugins.</p></div><div className="stream-status"><i /> {nuvioToken ? 'nuvio connected' : 'adapter ready'}<br /><small>{nuvioStatus || 'mock catalog · v0.1'}</small></div></div>
         {!nuvioToken && <button className="connect-nuvio-button" onClick={() => setShowConnect(!showConnect)}><Radio size={14} /> connect Nuvio account</button>}
-        {nuvioToken && <button className="disconnect-nuvio" onClick={() => { localStorage.removeItem('nuvio_access_token'); setNuvioToken(''); setNuvioName(''); setTitles(streamTitles); setNuvioStatus(''); }}>disconnect {nuvioName || 'Nuvio'}</button>}
+        {nuvioToken && <div className="nuvio-actions"><button className="disconnect-nuvio" onClick={() => { localStorage.removeItem('nuvio_access_token'); setNuvioToken(''); setNuvioName(''); setTitles(streamTitles); setResources([]); setNuvioStatus(''); }}>disconnect {nuvioName || 'Nuvio'}</button><button className="refresh-nuvio" disabled={refreshing} onClick={() => refreshNuvio()}>{refreshing ? 'syncing...' : 'refresh add-ons'}</button></div>}
         {showConnect && !nuvioToken && <form className="nuvio-connect" onSubmit={connectNuvio}><div><b>Connect your Nuvio account</b><span>Your access token stays in this browser and is used only for the documented Nuvio API.</span></div><input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="email" aria-label="Nuvio email" /><input type="password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="password" aria-label="Nuvio password" /><button type="submit">connect</button></form>}
+        {nuvioToken && <div className="nuvio-resources"><span className="guide-subhead">active providers</span><span>{resources.length ? resources.map((item) => item.name || item.title || item.id || item.type || 'provider').join(' · ') : 'Syncing provider list from Nuvio...'}</span></div>}
         <div className="stream-toolbar"><label className="stream-search"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="search the catalog" aria-label="Search catalog" /></label><div className="stream-filters">{(['All', 'Movie', 'Series'] as const).map((item) => <button className={filter === item ? 'active' : ''} onClick={() => setFilter(item)} key={item}>{item}</button>)}</div></div>
         <div className="stream-grid">{visibleTitles.map((item) => <button className="stream-card" key={item.id} onClick={() => setSelected(item)}><div className="stream-poster">{item.poster.startsWith('http') ? <img src={item.poster} alt="" /> : <span>{item.poster}</span>}<small>{item.type}</small></div><div className="stream-card-copy"><b>{item.title}</b><span>{item.year || '—'} · {item.genre}</span></div></button>)}</div>
         {visibleTitles.length === 0 && <div className="stream-empty">No titles match “{query}”.</div>}
         <div className="stream-footnote"><ShieldCheck size={14} /> Prototype sources are rights-cleared demos. Real Nuvio/plugin sources should be returned by the Oracle adapter before production playback is enabled.</div>
       </section>
-      {selected && <div className="stream-modal-backdrop" role="presentation" onClick={() => setSelected(null)}><section className="stream-detail" role="dialog" aria-modal="true" aria-label={selected.title} onClick={(event) => event.stopPropagation()}><button className="guide-close" onClick={() => setSelected(null)} aria-label="Close title"><X size={16} /></button><div className="stream-detail-poster">{selected.poster.startsWith('http') ? <img src={selected.poster} alt="" /> : selected.poster}</div><span className="section-label">{selected.type} · {selected.year}</span><h2>{selected.title}</h2><p>{selected.description}</p><div className="stream-sources"><span className="guide-subhead"><Play size={14} /> available sources</span>{selected.sources.map((item) => <button className="stream-source" key={item.url} onClick={async () => { try { const [, type, id] = item.url.split(':'); setNuvioStatus('finding streams...'); const response = await apiRequest(`/nuvio/streams/${type}/${id}`); const data = await response.json() as { streams?: { name?: string; description?: string; url?: string; externalUrl?: string }[] }; const remote = data.streams?.find((stream) => stream.url || stream.externalUrl); if (remote?.url) setSource({ label: remote.name || 'Nuvio stream', quality: remote.description || 'Remote source', url: remote.url }); else if (remote?.externalUrl) window.open(remote.externalUrl, '_blank', 'noopener,noreferrer'); else setNuvioStatus('No playable streams were returned for this title.'); } catch (error) { setNuvioStatus(error instanceof Error ? error.message : 'Unable to load streams.'); } }}><span><b>{item.label}</b><small>{item.quality}</small></span><Play size={14} /></button>)}</div>{source && <WebPlayer source={source} title={selected.title} />}</section></div>}
+      {selected && <div className="stream-modal-backdrop" role="presentation" onClick={() => setSelected(null)}><section className="stream-detail" role="dialog" aria-modal="true" aria-label={selected.title} onClick={(event) => event.stopPropagation()}><button className="guide-close" onClick={() => setSelected(null)} aria-label="Close title"><X size={16} /></button><div className="stream-detail-poster">{selected.poster.startsWith('http') ? <img src={selected.poster} alt="" /> : selected.poster}</div><span className="section-label">{selected.type} · {selected.year}</span><h2>{selected.title}</h2><p>{selected.description}</p><div className="stream-sources"><span className="guide-subhead"><Play size={14} /> available sources</span>{selected.sources.map((item) => <button className="stream-source" key={item.url} onClick={async () => { try { const [, type, id] = item.url.split(':'); setNuvioStatus('finding streams...'); const response = await apiRequest(`/nuvio/streams/${type}/${id}`); const data = await response.json() as { streams?: { name?: string; description?: string; url?: string; externalUrl?: string }[] }; const remote = data.streams?.find((stream) => stream.url || stream.externalUrl); if (remote?.url) setSource({ label: remote.name || 'Nuvio provider', quality: remote.description || 'Remote source', url: remote.url }); else if (remote?.externalUrl) window.open(remote.externalUrl, '_blank', 'noopener,noreferrer'); else setNuvioStatus('No playable streams were returned for this title.'); } catch (error) { setNuvioStatus(error instanceof Error ? error.message : 'Unable to load streams.'); } }}><span><b>{item.label}</b><small>{item.quality}</small></span><Play size={14} /></button>)}</div>{source && <WebPlayer source={source} title={selected.title} />}</section></div>}
     </main>
   );
 }
